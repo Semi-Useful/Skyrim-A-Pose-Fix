@@ -1,4 +1,5 @@
 #pragma once
+#include <unordered_set>
 #include "RE/H/hkbBehaviorReferenceGenerator.h"
 namespace APoseFix 
 {
@@ -70,14 +71,31 @@ use this to map relative filpaths to absolute?
 */
         static void Install()
         {
-            REL::Relocation<std::uintptr_t> target{ REL::RelocationID(62947, 0), REL::Relocate(0x1AB, 0) };
+            REL::Relocation<std::uintptr_t> target{ REL::RelocationID(62927, 0), REL::Relocate(0x146, 0) };
             SKSE::AllocTrampoline(14);
             auto &trampoline = SKSE::GetTrampoline();
             _CombinePaths = trampoline.write_call<5>(target.address(), CombinePaths);
         }
         private:
-        static bool CombinePaths(const char* a_path1, const char* a_path2, const char* unk03); 
+        static bool CombinePaths(const char* a_path1, const char* a_path2, RE::BSFixedString* a_finalPath); 
         static inline REL::Relocation<decltype(CombinePaths)> _CombinePaths;
+    };
+
+    // Since we don't know the project folder paths, we hook project load to map them
+    // Up	p	BShkbAnimationGraph__sub_140AEDD10+108	call    sub_140AFFFE0
+    class LoadBehaviorProjectHook
+    {
+        public:
+        static void Install()
+        {
+            REL::Relocation<std::uintptr_t> target{ REL::RelocationID(62640, 0), REL::Relocate(0x108, 0) };
+            SKSE::AllocTrampoline(14);
+            auto &trampoline = SKSE::GetTrampoline();
+            _LoadBehaviorProject = trampoline.write_call<5>(target.address(), LoadBehaviorProject);
+        }
+        private:
+        static RE::hkbBehaviorGraph* LoadBehaviorProject(const char* folder, const char* name, RE::hkbCharacter& hchar, uint64_t project_data_handle, RE::BSFixedString& filename, RE::BSScrapArray<RE::hkbBehaviorGraph*>& hgraphs);
+        static inline REL::Relocation<decltype(LoadBehaviorProject)> _LoadBehaviorProject;
     };
 
     /*
@@ -119,11 +137,55 @@ Down	p	hkbCharacter__sub_140B685B0+3F	call    sub_140B66930
 Down	o	.rdata:stru_141C567B4	IPtoStateMap <rva sub_140B66930, -1>
 Down	o	.pdata:00000001435501C4	RUNTIME_FUNCTION <rva sub_140B66930, rva algn_140B66A39, \
     */
+
+    /*Up	p	AnimationFileManagerSingleton__Func2_140B0A150+B6	call    AnimationFileManagerSingleton__sub_140B0A5C0
+    	p	AnimationFileManagerSingleton__Func1_140B09FB0+89	call    AnimationFileManagerSingleton__sub_140B0A5C0*/
+   class ValidClipHook
+   {
+
+    public:
+    static void Install()
+    {
+        REL::Relocation<std::uintptr_t> target{ REL::RelocationID(63069, 0), REL::Relocate(0x89, 0) };
+        SKSE::AllocTrampoline(14);
+        auto &trampoline = SKSE::GetTrampoline();
+        _IsValidClip = trampoline.write_call<5>(target.address(), IsValidClip);
+    }
+    private:
+    /*
+    (unsigned __int8)AnimationFileManagerSingleton::sub_140B0A5C0(
+                          a1,
+                          (void *)a2,
+                          *(_WORD *)&a3[1]._pad_14[4],
+                          (BSSynchronizedClipGenerator *)a4,
+                          &a2a,
+                          &a6) 
+    */
+    static bool IsValidClip(RE::AnimationFileManagerSingleton* a_manager, const RE::hkbContext& a_context, uint16_t animationBindingIndex, RE::BSSynchronizedClipGenerator* a_synchronizedClipGenerator,
+    void* unk05, uint32_t *a_outUserData);
+    static inline REL::Relocation<decltype(IsValidClip)> _IsValidClip;
+    static std::unordered_set<uint16_t> portedAnimationIndices; // we don't need a lock because Converter already throttles
+   };
+
+   class ClipGeneratorActivateHook
+   {
+        public:
+        static void Install()
+        {
+            REL::Relocation<uintptr_t> hkbClipGeneratorVtbl{ RE::VTABLE_hkbClipGenerator[0] };
+            _Activate = hkbClipGeneratorVtbl.write_vfunc(0x4, Activate);
+        }
+        private:
+        static void Activate(RE::hkbClipGenerator* a_this, const RE::hkbContext& a_context);
+        static inline REL::Relocation<decltype(Activate)> _Activate;
+   };
     static void InstallHooks()
     {
         // LoadAnimationBindingHook::Install();
         // CombinePathsHook::Install();
-        ClipLoadHook::Install();
+        ValidClipHook::Install();
+        // ClipLoadHook::Install();
         LoadBehaviorGraphHook::Install();
+        LoadBehaviorProjectHook::Install();
     }
 }

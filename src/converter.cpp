@@ -2,12 +2,36 @@
 
 namespace APoseFix
 {
+    bool Converter::PortHavokFile(const std::filesystem::path &a_inputPath)
+    {
+        std::filesystem::path convertedPath{a_inputPath};
+        convertedPath.replace_filename(std::format("{}_cv.hkx", a_inputPath.stem().string()));
+        if (!PortHavokFile(a_inputPath, convertedPath))
+        {
+            return false;
+        }
+        std::error_code removeErrorCode;
+        std::filesystem::remove(a_inputPath, removeErrorCode);
+        if (removeErrorCode.value() != 0)
+        {
+            return false;
+        }
+        std::error_code renameErrorCode;
+        std::filesystem::rename(convertedPath, a_inputPath, renameErrorCode);
+        if (renameErrorCode.value() != 0)
+        {
+            return false;
+        }
+        return true;
+    }
+
     bool Converter::PortHavokFile(const std::filesystem::path &a_inputPath, const std::filesystem::path &a_outputPath)
     {
         if (!std::filesystem::exists(hkxcPath))
         {
             return false;
         }
+        std::lock_guard<std::mutex> guard(converterLock);
         if (std::filesystem::exists(a_outputPath))
         {
             std::error_code removeErrorCode;
@@ -22,19 +46,20 @@ namespace APoseFix
         ZeroMemory(&si, sizeof(si));
         si.cb = sizeof(si);
         ZeroMemory(&pi, sizeof(pi));
+
         if (!CreateProcess(hkxcPathStr.c_str(),
-                command.data(),
-                nullptr,
-                nullptr,
-                FALSE,
-                CREATE_NO_WINDOW,
-                nullptr,
-                nullptr,
-                &si, &pi))
+                           command.data(),
+                           nullptr,
+                           nullptr,
+                           FALSE,
+                           CREATE_NO_WINDOW,
+                           nullptr,
+                           nullptr,
+                           &si, &pi))
         {
             return false;
         }
-        WaitForSingleObject(pi.hProcess, INFINITE);
+        WaitForSingleObject(pi.hProcess, 5000);
         DWORD exit_code;
         GetExitCodeProcess(pi.hProcess, &exit_code);
         CloseHandle(pi.hProcess);
@@ -44,6 +69,8 @@ namespace APoseFix
         {
             return false;
         }
+        // auto message = std::format("APoseFix: Ported {} to 64 bit", a_inputPath.filename().string());
+        // RE::DebugNotification(message.c_str());
         return std::filesystem::exists(a_outputPath);
     }
 }
