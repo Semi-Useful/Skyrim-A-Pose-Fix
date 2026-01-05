@@ -124,7 +124,7 @@ namespace APoseFix
         }
         if (portedAnimationIndices.contains(animationBindingIndex) )
         {
-            SKSE::log::info("Animation file already converted: {}", animationPath.string());
+            SKSE::log::info("Animation file at index {} already converted: {}", animationBindingIndex, animationPath.string());
             return result;
         }
         // to-do: use map of already converted animation indices to skip redundant conversions

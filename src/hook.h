@@ -43,6 +43,7 @@ namespace APoseFix
 
     /*Up	p	AnimationFileManagerSingleton__Func2_140B0A150+B6	call    AnimationFileManagerSingleton__sub_140B0A5C0
     	p	AnimationFileManagerSingleton__Func1_140B09FB0+89	call    AnimationFileManagerSingleton__sub_140B0A5C0*/
+        // Up	p	sub_140BCBB90:loc_140BCBC1B	call    sub_140BCC220
    class ValidClipHook
    {
 

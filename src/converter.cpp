@@ -27,7 +27,6 @@ namespace APoseFix
 
     bool Converter::PortHavokFile(const std::filesystem::path &a_inputPath, const std::filesystem::path &a_outputPath)
     {
-        std::lock_guard<std::mutex> guard(converterLock);
         if (std::filesystem::exists(a_outputPath))
         {
             std::error_code removeErrorCode;
