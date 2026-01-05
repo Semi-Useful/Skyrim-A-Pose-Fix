@@ -52,6 +52,13 @@ target(name)
         }
     })
 
+    -- add serde_hkx static library
+    add_includedirs("lib/serdehkx")
+    add_linkdirs("lib/serdehkx")
+    add_links("serde_hkx_ffi")
+    -- Rust std library dependencies
+    add_syslinks("ntdll", "ws2_32", "userenv", "bcrypt", "advapi32")
+
     -- add src files
     add_files("src/**.cpp")
     add_headerfiles("src/**.h")

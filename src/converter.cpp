@@ -1,5 +1,5 @@
 #include "converter.h"
-
+#include <serde_hkx_ffi.h>
 namespace APoseFix
 {
     bool Converter::PortHavokFile(const std::filesystem::path &a_inputPath)
@@ -27,50 +27,19 @@ namespace APoseFix
 
     bool Converter::PortHavokFile(const std::filesystem::path &a_inputPath, const std::filesystem::path &a_outputPath)
     {
-        if (!std::filesystem::exists(hkxcPath))
-        {
-            return false;
-        }
         std::lock_guard<std::mutex> guard(converterLock);
         if (std::filesystem::exists(a_outputPath))
         {
             std::error_code removeErrorCode;
             std::filesystem::remove(a_outputPath, removeErrorCode);
         }
-        auto hkxcPathStr = hkxcPath.string();
         auto pathStr = a_inputPath.string();
         auto convertedPathStr = a_outputPath.string();
-        auto command = std::format("\"{}\" convert -i \"{}\" -o \"{}\" -v amd64", hkxcPathStr, pathStr, convertedPathStr);
-        STARTUPINFO si;
-        PROCESS_INFORMATION pi;
-        ZeroMemory(&si, sizeof(si));
-        si.cb = sizeof(si);
-        ZeroMemory(&pi, sizeof(pi));
-
-        if (!CreateProcess(hkxcPathStr.c_str(),
-                           command.data(),
-                           nullptr,
-                           nullptr,
-                           FALSE,
-                           CREATE_NO_WINDOW,
-                           nullptr,
-                           nullptr,
-                           &si, &pi))
+        auto serdeResult = serde_hkx_ffi_convert(pathStr.c_str(), convertedPathStr.c_str(), OutputFormat::SERDE_HKX_AMD64);
+        if (serdeResult != SerdeHkxError::SERDE_HKX_OK)
         {
             return false;
         }
-        WaitForSingleObject(pi.hProcess, 5000);
-        DWORD exit_code;
-        GetExitCodeProcess(pi.hProcess, &exit_code);
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-
-        if (exit_code != EXIT_SUCCESS)
-        {
-            return false;
-        }
-        // auto message = std::format("APoseFix: Ported {} to 64 bit", a_inputPath.filename().string());
-        // RE::DebugNotification(message.c_str());
         return std::filesystem::exists(a_outputPath);
     }
 }
