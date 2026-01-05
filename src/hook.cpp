@@ -224,6 +224,7 @@ namespace APoseFix
         }
         SKSE::log::info("Converted animation file: {}", animationPath.string());
         return result;
+        // returning true and 0xC might make animation chaining idk
     }
     void ClipGeneratorActivateHook::Activate(RE::hkbClipGenerator *a_this, const RE::hkbContext &a_context)
     {
