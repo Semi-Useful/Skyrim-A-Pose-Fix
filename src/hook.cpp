@@ -64,99 +64,6 @@ namespace APoseFix
         return result;
     }
 
-    bool CombinePathsHook::CombinePaths(const char *a_path1, const char *a_path2, RE::BSFixedString *a_finalPath)
-    {
-        if (a_path1 && a_path2 && a_path1[0] != '\0' && a_path2[0] != '\0')
-        {
-                SKSE::log::info("Combining Paths: {} + {}", a_path1, a_path2);
-        }
-        auto result =  _CombinePaths(a_path1, a_path2, a_finalPath);
-        if (a_finalPath)
-        {
-            SKSE::log::info("Path result: {}", a_finalPath->c_str());
-        }
-        return result;
-    }
-    int32_t ClipLoadHook::Queue(RE::AnimationFileManagerSingleton *a_manager, RE::hkbContext &a_context, RE::hkbClipGenerator *a_clipGenerator, RE::BSSynchronizedClipGenerator *a_syncClipGen)
-    {
-
-        auto result = _Queue(a_manager, a_context, a_clipGenerator, a_syncClipGen);
-        if (a_clipGenerator->userData != 0xC) // animation unable to load
-        {
-            SKSE::log::info("Animation {} unable to load", a_clipGenerator->animationName.c_str());
-            auto bindingIndex = a_clipGenerator->animationBindingIndex;
-            if (bindingIndex < 0)
-            {
-                return result;
-            }
-            auto *character = a_context.character;
-            if (!character)
-            {
-                return result;
-            }
-            RE::BShkbAnimationGraph *graph = stl::adjust_pointer<RE::BShkbAnimationGraph>(a_context.character, -0xC0);
-            if (!graph)
-            {
-                return result;
-            }
-            auto setup = character->setup;
-            if (!setup)
-            {
-                return result;
-            }
-            auto data = setup->data;
-            if (!data)
-            {
-                return result;
-            }
-            auto stringData = data->stringData;
-            if (!stringData)
-            {
-                return result;
-            }
-            auto &animationBundleNames = stringData->animationNames;
-            if (animationBundleNames.size() <= bindingIndex)
-            {
-                return result;
-            }
-            auto *animationFilename = animationBundleNames[bindingIndex].data();
-            std::filesystem::path animationPath;
-            if (!PathResolver::GetAbsoluteFolderPath(graph->projectName.c_str(), animationFilename, animationPath))
-            {
-                return result;
-            }
-            if (std::filesystem::is_directory(animationPath) || !std::filesystem::exists(animationPath))
-            {
-                SKSE::log::info("Animation file does not exist: {}", animationPath.string());
-                return result;
-            }
-            
-            // Pick one of the event sources to lock
-            RE::BSSpinLockGuard locker(static_cast<RE::BSTEventSource<RE::BSAnimationGraphEvent>*>(graph)->lock);
-            if (!Converter::PortHavokFile(animationPath))
-            {
-                SKSE::log::info("Failed to convert animation file: {}", animationPath.string());
-                return result;
-            }
-            else
-            {
-                SKSE::log::info("Converted animation file: {}", animationPath.string());
-                result = _Queue(a_manager, a_context, a_clipGenerator, a_syncClipGen);
-            }
-        }
-        return result;
-    }
-    bool ClipLoadHook::Load(RE::AnimationFileManagerSingleton *a_manager, const RE::hkbContext &a_context, RE::hkbClipGenerator *a_clipGenerator, RE::BSSynchronizedClipGenerator *a_synchronizedClipGenerator)
-    {
-        if (a_clipGenerator->userData == 0xC)
-        {
-            SKSE::log::info("Clip generator {} loaded 3", a_clipGenerator->animationName.c_str());
-            
-        }
-        auto result =  _Load(a_manager, a_context, a_clipGenerator, a_synchronizedClipGenerator);
-    
-        return result;
-    }
     RE::hkbBehaviorGraph *LoadBehaviorProjectHook::LoadBehaviorProject(const char *folder, const char *name, RE::hkbCharacter &hchar, uint64_t project_data_handle, RE::BSFixedString &filename, RE::BSScrapArray<RE::hkbBehaviorGraph *> &hgraphs)
     {
         auto result = _LoadBehaviorProject(folder, name, hchar, project_data_handle, filename, hgraphs);
@@ -215,6 +122,11 @@ namespace APoseFix
             SKSE::log::info("Animation file does not exist: {}", animationPath.string());
             return result;
         }
+        if (portedAnimationIndices.contains(animationBindingIndex) )
+        {
+            SKSE::log::info("Animation file already converted: {}", animationPath.string());
+            return result;
+        }
         // to-do: use map of already converted animation indices to skip redundant conversions
         // add ae addresses
         if (!Converter::PortHavokFile(animationPath))
@@ -222,16 +134,9 @@ namespace APoseFix
             SKSE::log::info("Failed to convert animation file: {}", animationPath.string());
             return result;
         }
+        portedAnimationIndices.emplace(animationBindingIndex);
         SKSE::log::info("Converted animation file: {}", animationPath.string());
         return result;
         // returning true and 0xC might make animation chaining idk
-    }
-    void ClipGeneratorActivateHook::Activate(RE::hkbClipGenerator *a_this, const RE::hkbContext &a_context)
-    {
-        _Activate(a_this, a_context);
-        if (!a_this->binding)
-        {
-            SKSE::log::info("Unbound clip generator {}", a_this->animationName.c_str());
-        }
     }
 }
