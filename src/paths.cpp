@@ -35,23 +35,25 @@ namespace APoseFix
 
             for(const auto& component : path)
             {
-                if (component == "OpenAnimationReplacer")
+                auto componentStr = component.string();
+                if (_stricmp(componentStr.c_str(), "OpenAnimationReplacer") == 0
+                || _stricmp(componentStr.c_str(), "DynamicAnimationReplacer") == 0)
                 {
                     return false;
                 }
             }
-
-            if (*topDirectory == "data")
+            auto topDirectoryStr = topDirectory->string();
+            if (_stricmp(topDirectoryStr.c_str(), "data") == 0)
             {
                 a_outFolderPath = std::filesystem::current_path() / a_folderName;
                 return true;
             }
-            if (*topDirectory == "meshes")
+            if (_stricmp(topDirectoryStr.c_str(), "meshes") == 0)
             {
                 a_outFolderPath = std::filesystem::current_path() / "Data" / a_folderName;
                 return true;
             }
-            if (*topDirectory == it->second)
+            if (_stricmp(topDirectoryStr.c_str(), it->second.c_str()) == 0)
             {
                 a_outFolderPath = std::filesystem::current_path() / "Data" / "Meshes" / path;
                 return true;

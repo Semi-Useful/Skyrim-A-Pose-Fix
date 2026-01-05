@@ -50,9 +50,6 @@ namespace APoseFix
                 {
                     SKSE::log::error("Failed to convert behavior graph {} to {}", path.string(), convertedPath.string());
                 }
-
-
-            
             }
             SKSE::log::info("Behavior Graph {}\\{} not loadable, redirecting to dummy behavior", a_folderRoot, a_behaviorFilePath);
             a_folderRoot = "Actors\\Character";

@@ -1,4 +1,5 @@
 #include "hook.h"
+#include "converter.h"
 void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 {
 	switch (a_msg->type) {
@@ -9,8 +10,22 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 	case SKSE::MessagingInterface::kPreLoadGame:
 		break;
 	case SKSE::MessagingInterface::kPostLoadGame:
+		if (APoseFix::Converter::HasErrors())
+		{
+			auto report = APoseFix::Converter::GetErrorReport();
+			RE::DebugMessageBox(report.c_str());
+			SKSE::log::error("{}", report);
+			APoseFix::Converter::ClearErrors();
+		}
         break;
 	case SKSE::MessagingInterface::kNewGame:
+		if (APoseFix::Converter::HasErrors())
+		{
+			auto report = APoseFix::Converter::GetErrorReport();
+			RE::DebugMessageBox(report.c_str());
+			SKSE::log::error("{}", report);
+			APoseFix::Converter::ClearErrors();
+		}
 		break;
 	}
 }
