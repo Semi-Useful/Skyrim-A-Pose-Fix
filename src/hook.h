@@ -11,7 +11,6 @@ namespace APoseFix
             // Down	p	sub_140B06D20+11B	call    sub_140B06D20
             //	p	sub_140BC9070+10B	call    sub_140BC9070 AE
             REL::Relocation<std::uintptr_t> target{REL::RelocationID(63030, 63948), REL::Relocate(0x11B, 0x10B)};
-            SKSE::AllocTrampoline(14);
             auto &trampoline = SKSE::GetTrampoline();
             _Load = trampoline.write_call<5>(target.address(), Load);
         }
@@ -30,7 +29,6 @@ namespace APoseFix
         static void Install()
         {
             REL::Relocation<std::uintptr_t> target{ REL::RelocationID(62640, 63585), REL::Relocate(0x108, 0x111) };
-            SKSE::AllocTrampoline(14);
             auto &trampoline = SKSE::GetTrampoline();
             _LoadBehaviorProject = trampoline.write_call<5>(target.address(), LoadBehaviorProject);
         }
@@ -51,7 +49,6 @@ namespace APoseFix
     static void Install()
     {
         REL::Relocation<std::uintptr_t> target{ REL::RelocationID(63069, 63981), REL::Relocate(0x89, 0x8B) };
-        SKSE::AllocTrampoline(14);
         auto &trampoline = SKSE::GetTrampoline();
         _IsValidClip = trampoline.write_call<5>(target.address(), IsValidClip);
     }
@@ -74,6 +71,7 @@ namespace APoseFix
 
     static void InstallHooks()
     {
+        SKSE::AllocTrampoline(14 * 3); 
         ValidClipHook::Install();
         LoadBehaviorGraphHook::Install();
         LoadBehaviorProjectHook::Install();
