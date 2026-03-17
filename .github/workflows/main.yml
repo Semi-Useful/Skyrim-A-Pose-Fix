@@ -15,6 +15,21 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-pc-windows-msvc
+
+    - name: Clone and build serde_hkx_ffi
+      shell: pwsh
+      run: |
+        git clone https://github.com/SARDONYX-sard/serde-hkx.git serde-hkx-src
+        cd serde-hkx-src
+        cargo build --release -p serde_hkx_ffi
+        cd ..
+        New-Item -ItemType Directory -Force -Path "lib\serdehkx"
+        Copy-Item "serde-hkx-src\target\release\serde_hkx_ffi.lib" -Destination "lib\serdehkx\serde_hkx_ffi.lib"
+
     - name: Setup XMake
       uses: xmake-io/github-action-setup-xmake@v1
 
