@@ -3,8 +3,6 @@ name: Build APoseFix
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -20,12 +18,16 @@ jobs:
     - name: Setup XMake
       uses: xmake-io/github-action-setup-xmake@v1
 
-    - name: Configure and Build
-      run: |
-        xmake config --plat=windows --arch=x64 --mode=release
-        xmake build
+    - name: Configure
+      run: xmake config --plat=windows --arch=x64 --mode=release -y
 
-    - name: Upload DLL artifact
+    - name: Install dependencies
+      run: xmake require -y
+
+    - name: Build
+      run: xmake build
+
+    - name: Upload DLL
       uses: actions/upload-artifact@v4
       with:
         name: APoseFix
