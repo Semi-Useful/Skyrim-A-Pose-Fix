@@ -1,1 +1,32 @@
+name: Build APoseFix
 
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup XMake
+      uses: xmake-io/github-action-setup-xmake@v1
+
+    - name: Configure and Build
+      run: |
+        xmake config --plat=windows --arch=x64 --mode=release
+        xmake build
+
+    - name: Upload DLL artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: APoseFix
+        path: build/windows/x64/release/APoseFix.dll
