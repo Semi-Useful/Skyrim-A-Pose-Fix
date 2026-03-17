@@ -22,19 +22,15 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 {
     SKSE::Init(a_skse);
-    SKSE::GetLogger()->set_level(spdlog::level::info);
     SKSE::log::info("APoseFix starting load...");
-
     try {
         auto messaging = SKSE::GetMessagingInterface();
         if (!messaging->RegisterListener("SKSE", MessageHandler)) {
             SKSE::log::error("Failed to register message listener");
             return false;
         }
-        SKSE::log::info("Registering message listener succeeded, installing hooks...");
-
+        SKSE::log::info("Message listener registered, installing hooks...");
         APoseFix::InstallHooks();
-
         SKSE::log::info("InstallHooks() completed");
     }
     catch (const std::exception& e) {
@@ -45,7 +41,6 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
         SKSE::log::error("Fatal unknown exception during load");
         return false;
     }
-
     SKSE::log::info("APoseFix loaded successfully");
     return true;
 }
